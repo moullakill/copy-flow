@@ -3,7 +3,77 @@
 ## Base URL
 `/api/v1`
 
+## Authentication
+
+Toutes les routes marquées `auth: required` nécessitent un token JWT dans le header:
+```
+Authorization: Bearer <token>
+```
+
 ## Routes
+
+### Auth (Authentification Élève)
+
+```json
+{
+  "routes": {
+    "auth": {
+      "POST /auth/register": {
+        "description": "Inscription élève",
+        "body": {
+          "email": "string",
+          "password": "string (min 6 chars)",
+          "name": "string"
+        },
+        "response": {
+          "user": {
+            "id": "uuid",
+            "email": "string",
+            "name": "string",
+            "role": "student"
+          },
+          "token": "string (JWT)"
+        }
+      },
+      "POST /auth/login": {
+        "description": "Connexion élève",
+        "body": {
+          "email": "string",
+          "password": "string"
+        },
+        "response": {
+          "user": {
+            "id": "uuid",
+            "email": "string",
+            "name": "string",
+            "role": "student"
+          },
+          "token": "string (JWT)"
+        }
+      },
+      "POST /auth/logout": {
+        "description": "Déconnexion",
+        "auth": "required",
+        "response": {
+          "success": "boolean"
+        }
+      },
+      "GET /auth/me": {
+        "description": "Récupérer l'utilisateur connecté",
+        "auth": "required",
+        "response": {
+          "user": {
+            "id": "uuid",
+            "email": "string",
+            "name": "string",
+            "role": "student"
+          }
+        }
+      }
+    }
+  }
+}
+```
 
 ### Submissions (Copies)
 
@@ -13,6 +83,7 @@
     "submissions": {
       "POST /submissions": {
         "description": "Créer une nouvelle soumission",
+        "auth": "required (student)",
         "body": {
           "title": "string",
           "student_name": "string",

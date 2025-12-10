@@ -1,5 +1,6 @@
 export interface Submission {
   id: string;
+  studentId: string;
   title: string;
   studentName: string;
   contentType: "text" | "file";
@@ -35,7 +36,7 @@ export function generateId(): string {
 // Local storage helpers
 const STORAGE_KEY = "copyflow_submissions";
 
-export function getSubmissions(): Submission[] {
+function getAllSubmissions(): Submission[] {
   const data = localStorage.getItem(STORAGE_KEY);
   if (!data) return [];
   
@@ -46,19 +47,27 @@ export function getSubmissions(): Submission[] {
   return submissions.filter(s => new Date(s.expiresAt) > now);
 }
 
+export function getSubmissions(studentId?: string): Submission[] {
+  const submissions = getAllSubmissions();
+  if (studentId) {
+    return submissions.filter(s => s.studentId === studentId);
+  }
+  return submissions;
+}
+
 export function saveSubmission(submission: Submission): void {
-  const submissions = getSubmissions();
+  const submissions = getAllSubmissions();
   submissions.push(submission);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
 }
 
 export function getSubmissionById(id: string): Submission | undefined {
-  const submissions = getSubmissions();
+  const submissions = getAllSubmissions();
   return submissions.find(s => s.id === id);
 }
 
 export function updateSubmission(id: string, updates: Partial<Submission>): void {
-  const submissions = getSubmissions();
+  const submissions = getAllSubmissions();
   const index = submissions.findIndex(s => s.id === id);
   if (index !== -1) {
     submissions[index] = { ...submissions[index], ...updates };
@@ -67,7 +76,7 @@ export function updateSubmission(id: string, updates: Partial<Submission>): void
 }
 
 export function deleteSubmission(id: string): void {
-  const submissions = getSubmissions();
+  const submissions = getAllSubmissions();
   const filtered = submissions.filter(s => s.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
 }

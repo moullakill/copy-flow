@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
-import { FileText, Send, Crown } from "lucide-react";
+import { FileText, Send, Crown, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
+  const { user, logout } = useAuth();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -14,18 +17,37 @@ export function Header() {
         </Link>
         
         <nav className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/submit">
-              <Send className="w-4 h-4" />
-              Déposer
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard">
-              <FileText className="w-4 h-4" />
-              Mes copies
-            </Link>
-          </Button>
+          {user ? (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/submit">
+                  <Send className="w-4 h-4" />
+                  Déposer
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">
+                  <FileText className="w-4 h-4" />
+                  Mes copies
+                </Link>
+              </Button>
+              <div className="flex items-center gap-2 px-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">{user.name}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Déconnexion</span>
+              </Button>
+            </>
+          ) : (
+            <Button variant="default" size="sm" asChild>
+              <Link to="/auth">
+                <LogIn className="w-4 h-4" />
+                Connexion
+              </Link>
+            </Button>
+          )}
           <Button variant="premium" size="sm" asChild>
             <Link to="/premium">
               <Crown className="w-4 h-4" />

@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Send, 
   FileText, 
@@ -12,10 +13,12 @@ import {
   Zap, 
   Crown,
   ArrowRight,
-  Link as LinkIcon
+  Link as LinkIcon,
+  LogIn
 } from "lucide-react";
 
 export default function Index() {
+  const { user } = useAuth();
   return (
     <Layout>
       {/* Hero Section */}
@@ -38,18 +41,37 @@ export default function Index() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: "0.3s" }}>
-              <Button variant="hero" size="xl" asChild>
-                <Link to="/submit">
-                  <Send className="w-5 h-5" />
-                  Déposer une copie
-                </Link>
-              </Button>
-              <Button variant="outline" size="xl" asChild>
-                <Link to="/dashboard">
-                  <FileText className="w-5 h-5" />
-                  Mes copies
-                </Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="hero" size="xl" asChild>
+                    <Link to="/submit">
+                      <Send className="w-5 h-5" />
+                      Déposer une copie
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="xl" asChild>
+                    <Link to="/dashboard">
+                      <FileText className="w-5 h-5" />
+                      Mes copies
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="hero" size="xl" asChild>
+                    <Link to="/auth">
+                      <LogIn className="w-5 h-5" />
+                      Commencer gratuitement
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="xl" asChild>
+                    <Link to="/premium">
+                      <Crown className="w-5 h-5" />
+                      Voir les offres
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

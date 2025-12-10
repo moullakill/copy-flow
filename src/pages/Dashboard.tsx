@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CopyButton } from "@/components/CopyButton";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Send, 
   FileText, 
@@ -21,16 +22,21 @@ import { getSubmissions, deleteSubmission, Submission } from "@/lib/submissions"
 import { toast } from "sonner";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
 
   useEffect(() => {
-    setSubmissions(getSubmissions());
-  }, []);
+    if (user) {
+      setSubmissions(getSubmissions(user.id));
+    }
+  }, [user]);
 
   const handleDelete = (id: string) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette copie ?")) {
       deleteSubmission(id);
-      setSubmissions(getSubmissions());
+      if (user) {
+        setSubmissions(getSubmissions(user.id));
+      }
       toast.success("Copie supprimée");
     }
   };

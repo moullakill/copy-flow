@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CopyButton } from "@/components/CopyButton";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Send, 
   FileText, 
@@ -28,9 +29,9 @@ type ContentType = "text" | "file";
 
 export default function SubmitPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [contentType, setContentType] = useState<ContentType>("text");
   const [title, setTitle] = useState("");
-  const [studentName, setStudentName] = useState("");
   const [textContent, setTextContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,8 +60,8 @@ export default function SubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !studentName.trim()) {
-      toast.error("Veuillez remplir tous les champs obligatoires.");
+    if (!title.trim()) {
+      toast.error("Veuillez remplir le titre du travail.");
       return;
     }
 
@@ -92,8 +93,9 @@ export default function SubmitPage() {
 
       const submission: Submission = {
         id,
+        studentId: user!.id,
         title: title.trim(),
-        studentName: studentName.trim(),
+        studentName: user!.name,
         contentType,
         content,
         fileType,
@@ -165,7 +167,6 @@ export default function SubmitPage() {
                   <Button variant="default" className="flex-1" onClick={() => {
                     setSubmittedData(null);
                     setTitle("");
-                    setStudentName("");
                     setTextContent("");
                     setFile(null);
                   }}>
@@ -198,27 +199,25 @@ export default function SubmitPage() {
             <Card variant="elevated">
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="studentName">Nom / Prénom *</Label>
-                      <Input
-                        id="studentName"
-                        placeholder="Jean Dupont"
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                        required
-                      />
+                  <div className="p-3 bg-secondary rounded-lg flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-semibold text-sm">{user?.name.charAt(0).toUpperCase()}</span>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Titre du travail *</Label>
-                      <Input
-                        id="title"
-                        placeholder="Dissertation de philosophie"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                      />
+                    <div>
+                      <p className="font-medium text-foreground text-sm">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Titre du travail *</Label>
+                    <Input
+                      id="title"
+                      placeholder="Dissertation de philosophie"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
