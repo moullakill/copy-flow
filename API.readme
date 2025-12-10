@@ -1,0 +1,182 @@
+# CopyFlow API Documentation
+
+## Base URL
+`/api/v1`
+
+## Routes
+
+### Submissions (Copies)
+
+```json
+{
+  "routes": {
+    "submissions": {
+      "POST /submissions": {
+        "description": "Créer une nouvelle soumission",
+        "body": {
+          "title": "string",
+          "student_name": "string",
+          "content_type": "text | file",
+          "content": "string (HTML pour text, base64 pour file)",
+          "file_type": "pdf | docx | null"
+        },
+        "response": {
+          "id": "uuid",
+          "consultation_url": "string",
+          "edit_code": "string (6 chars)",
+          "created_at": "timestamp"
+        }
+      },
+      "GET /submissions/:id": {
+        "description": "Récupérer une soumission (consultation publique)",
+        "response": {
+          "id": "uuid",
+          "title": "string",
+          "student_name": "string",
+          "content_type": "text | file",
+          "content": "string",
+          "status": "pending | corrected",
+          "correction": {
+            "grade": "string | null",
+            "appreciation": "string | null",
+            "corrected_at": "timestamp | null"
+          },
+          "created_at": "timestamp"
+        }
+      },
+      "GET /submissions/student/:student_id": {
+        "description": "Liste des soumissions d'un élève",
+        "auth": "required (student)",
+        "response": {
+          "submissions": [
+            {
+              "id": "uuid",
+              "title": "string",
+              "status": "pending | corrected",
+              "created_at": "timestamp",
+              "expires_at": "timestamp"
+            }
+          ]
+        }
+      },
+      "DELETE /submissions/:id": {
+        "description": "Supprimer une soumission",
+        "auth": "required (owner)",
+        "response": {
+          "success": "boolean"
+        }
+      }
+    },
+    "corrections": {
+      "POST /corrections/:submission_id": {
+        "description": "Ajouter/modifier une correction",
+        "body": {
+          "edit_code": "string (6 chars)",
+          "grade": "string",
+          "appreciation": "string",
+          "publish_immediately": "boolean (default: true)"
+        },
+        "response": {
+          "success": "boolean",
+          "correction": {
+            "grade": "string",
+            "appreciation": "string",
+            "corrected_at": "timestamp",
+            "published": "boolean"
+          }
+        }
+      },
+      "GET /corrections/verify/:submission_id": {
+        "description": "Vérifier le code d'édition",
+        "body": {
+          "edit_code": "string"
+        },
+        "response": {
+          "valid": "boolean",
+          "submission": "object | null"
+        }
+      }
+    },
+    "auth": {
+      "POST /auth/register": {
+        "description": "Inscription élève ou professeur",
+        "body": {
+          "email": "string",
+          "password": "string",
+          "role": "student | teacher",
+          "name": "string"
+        },
+        "response": {
+          "user": {
+            "id": "uuid",
+            "email": "string",
+            "role": "string"
+          },
+          "token": "string"
+        }
+      },
+      "POST /auth/login": {
+        "description": "Connexion",
+        "body": {
+          "email": "string",
+          "password": "string"
+        },
+        "response": {
+          "user": "object",
+          "token": "string"
+        }
+      }
+    },
+    "premium": {
+      "GET /teacher/dashboard": {
+        "description": "Dashboard professeur (PREMIUM)",
+        "auth": "required (teacher, premium)",
+        "query": {
+          "status": "pending | corrected | all",
+          "student_name": "string (optional)"
+        },
+        "response": {
+          "submissions": "array",
+          "stats": {
+            "total": "number",
+            "pending": "number",
+            "corrected": "number"
+          }
+        }
+      },
+      "GET /teacher/export": {
+        "description": "Export CSV des notes (PREMIUM)",
+        "auth": "required (teacher, premium)",
+        "response": "text/csv"
+      },
+      "PATCH /corrections/:submission_id/publish": {
+        "description": "Publier une correction différée (PREMIUM)",
+        "auth": "required (teacher, premium)",
+        "response": {
+          "success": "boolean"
+        }
+      }
+    }
+  }
+}
+```
+
+## Status Codes
+
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden (Premium required)
+- `404` - Not Found
+- `429` - Rate Limited
+
+## Rate Limits (FREE)
+
+- 5 soumissions actives maximum
+- 10 requêtes/minute
+
+## Retention
+
+- FREE: 30 jours
+- PREMIUM: Illimité
