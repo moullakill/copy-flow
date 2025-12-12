@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { 
+import { apiFetch } from "@/lib/api";
+import {
   Crown, 
   CheckCircle, 
   X,
@@ -49,11 +50,9 @@ const features = {
 
 // PayPal integration helper
 const initiatePayPalPayment = async (planType: 'student' | 'teacher') => {
-  // This would call your backend API which uses PAYPAL_CLIENT_ID and PAYPAL_SECRET
-  // from environment variables to create a PayPal order
-  const response = await fetch('/api/v1/payments/paypal/create-order', {
+  // This calls the backend API which uses PAYPAL_CLIENT_ID and PAYPAL_SECRET
+  const response = await apiFetch('/payments/paypal/create-order', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       plan_type: planType,
       amount: planType === 'student' ? '1.99' : '4.99',
