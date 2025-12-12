@@ -240,9 +240,9 @@ export default function Index() {
                 </Button>
               </div>
               <div className="gradient-premium p-8 md:p-12 flex items-center justify-center">
-                <div className="text-center">
+              <div className="text-center">
                   <p className="text-premium-foreground/80 text-sm mb-2">À partir de</p>
-                  <p className="text-5xl font-display font-bold text-premium-foreground">4,99€</p>
+                  <p className="text-5xl font-display font-bold text-premium-foreground">1,99€</p>
                   <p className="text-premium-foreground/80 text-sm">/mois</p>
                 </div>
               </div>

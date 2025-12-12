@@ -10,7 +10,10 @@ export function Footer() {
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-display font-semibold text-xl text-foreground">CopyFlow</span>
+            <div className="flex flex-col">
+              <span className="font-display font-semibold text-lg text-foreground leading-tight">Submity</span>
+              <span className="text-[10px] text-muted-foreground leading-none">by AIOCT</span>
+            </div>
           </div>
           
           <nav className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -20,7 +23,7 @@ export function Footer() {
           </nav>
           
           <p className="text-sm text-muted-foreground">
-            © 2024 CopyFlow. Tous droits réservés.
+            © 2024 AIOCT. Tous droits réservés.
           </p>
         </div>
       </div>
