@@ -1,7 +1,17 @@
-# CopyFlow API Documentation
+# Submity API Documentation (by AIOCT)
 
 ## Base URL
 `/api/v1`
+
+## Environment Variables
+
+Les variables d'environnement suivantes sont requises :
+
+```
+PAYPAL_CLIENT_ID=<votre_client_id_paypal>
+PAYPAL_SECRET=<votre_secret_paypal>
+PAYPAL_MODE=sandbox|live
+```
 
 ## Authentication
 
@@ -89,7 +99,8 @@ Authorization: Bearer <token>
           "student_name": "string",
           "content_type": "text | file",
           "content": "string (HTML pour text, base64 pour file)",
-          "file_type": "pdf | docx | null"
+          "file_type": "pdf | docx | null",
+          "file_name": "string | null"
         },
         "response": {
           "id": "uuid",
@@ -105,7 +116,8 @@ Authorization: Bearer <token>
           "title": "string",
           "student_name": "string",
           "content_type": "text | file",
-          "content": "string",
+          "content": "string (text ou base64)",
+          "file_name": "string | null",
           "status": "pending | corrected",
           "correction": {
             "grade": "string | null",
@@ -167,40 +179,90 @@ Authorization: Bearer <token>
           "submission": "object | null"
         }
       }
-    },
-    "auth": {
-      "POST /auth/register": {
-        "description": "Inscription élève ou professeur",
+    }
+  }
+}
+```
+
+### Payments (PayPal)
+
+```json
+{
+  "routes": {
+    "payments": {
+      "POST /payments/paypal/create-order": {
+        "description": "Créer une commande PayPal pour l'abonnement",
+        "auth": "required",
         "body": {
-          "email": "string",
-          "password": "string",
-          "role": "student | teacher",
-          "name": "string"
+          "plan_type": "student | teacher",
+          "amount": "string (1.99 | 4.99)",
+          "currency": "EUR"
         },
         "response": {
-          "user": {
+          "order_id": "string",
+          "approval_url": "string (URL de redirection PayPal)"
+        },
+        "env_required": ["PAYPAL_CLIENT_ID", "PAYPAL_SECRET"]
+      },
+      "POST /payments/paypal/capture-order": {
+        "description": "Capturer le paiement après approbation",
+        "auth": "required",
+        "body": {
+          "order_id": "string"
+        },
+        "response": {
+          "success": "boolean",
+          "subscription": {
             "id": "uuid",
-            "email": "string",
-            "role": "string"
-          },
-          "token": "string"
+            "plan_type": "student | teacher",
+            "status": "active",
+            "starts_at": "timestamp",
+            "expires_at": "timestamp"
+          }
+        },
+        "env_required": ["PAYPAL_CLIENT_ID", "PAYPAL_SECRET"]
+      },
+      "POST /payments/paypal/webhook": {
+        "description": "Webhook PayPal pour les événements de paiement",
+        "body": "PayPal webhook payload",
+        "response": {
+          "received": "boolean"
+        },
+        "env_required": ["PAYPAL_CLIENT_ID", "PAYPAL_SECRET"]
+      },
+      "GET /payments/subscription": {
+        "description": "Récupérer l'abonnement actuel de l'utilisateur",
+        "auth": "required",
+        "response": {
+          "subscription": {
+            "id": "uuid",
+            "plan_type": "student | teacher | null",
+            "status": "active | cancelled | expired | null",
+            "expires_at": "timestamp | null"
+          }
         }
       },
-      "POST /auth/login": {
-        "description": "Connexion",
-        "body": {
-          "email": "string",
-          "password": "string"
-        },
+      "POST /payments/subscription/cancel": {
+        "description": "Annuler l'abonnement",
+        "auth": "required",
         "response": {
-          "user": "object",
-          "token": "string"
+          "success": "boolean",
+          "cancelled_at": "timestamp"
         }
       }
-    },
+    }
+  }
+}
+```
+
+### Premium Features
+
+```json
+{
+  "routes": {
     "premium": {
       "GET /teacher/dashboard": {
-        "description": "Dashboard professeur (PREMIUM)",
+        "description": "Dashboard professeur (PREMIUM Enseignant)",
         "auth": "required (teacher, premium)",
         "query": {
           "status": "pending | corrected | all",
@@ -216,12 +278,12 @@ Authorization: Bearer <token>
         }
       },
       "GET /teacher/export": {
-        "description": "Export CSV des notes (PREMIUM)",
+        "description": "Export CSV des notes (PREMIUM Enseignant)",
         "auth": "required (teacher, premium)",
         "response": "text/csv"
       },
       "PATCH /corrections/:submission_id/publish": {
-        "description": "Publier une correction différée (PREMIUM)",
+        "description": "Publier une correction différée (PREMIUM Enseignant)",
         "auth": "required (teacher, premium)",
         "response": {
           "success": "boolean"
@@ -231,6 +293,14 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+## Pricing Plans
+
+| Plan | Prix | Fonctionnalités |
+|------|------|-----------------|
+| Gratuit | 0€/mois | 5 copies actives, rétention 30 jours |
+| Élève Premium | 1,99€/mois | Copies illimitées, archivage permanent |
+| Enseignant Premium | 4,99€/mois | Tout Élève + Dashboard, Export CSV, Correction différée |
 
 ## Status Codes
 
@@ -251,3 +321,8 @@ Authorization: Bearer <token>
 
 - FREE: 30 jours
 - PREMIUM: Illimité
+
+## File Handling
+
+Les fichiers doivent être envoyés encodés en base64 dans le champ `content`.
+Le backend décodera le base64 et stockera le fichier.

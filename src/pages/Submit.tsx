@@ -23,6 +23,7 @@ import {
   generateId, 
   saveSubmission 
 } from "@/lib/submissions";
+import { fileToBase64, validateFile } from "@/lib/fileUtils";
 import { toast } from "sonner";
 
 type ContentType = "text" | "file";
@@ -44,13 +45,9 @@ export default function SubmitPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      const validTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-      if (!validTypes.includes(selectedFile.type)) {
-        toast.error("Type de fichier non supporté. Utilisez PDF ou DOCX.");
-        return;
-      }
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error("Le fichier est trop volumineux (max 10 Mo).");
+      const validation = validateFile(selectedFile);
+      if (!validation.valid) {
+        toast.error(validation.error);
         return;
       }
       setFile(selectedFile);
@@ -82,13 +79,16 @@ export default function SubmitPage() {
       const editCode = generateEditCode();
       const consultationUrl = `${window.location.origin}/view/${id}`;
       
-      // For file content, we'll store a placeholder (in a real app, this would upload to storage)
       let content = textContent;
       let fileType: "pdf" | "docx" | undefined;
+      let fileName: string | undefined;
       
+      // Convert file to base64 for backend transmission
       if (contentType === "file" && file) {
-        content = `[Fichier: ${file.name}]`;
+        const base64Content = await fileToBase64(file);
+        content = base64Content;
         fileType = file.name.endsWith(".pdf") ? "pdf" : "docx";
+        fileName = file.name;
       }
 
       const submission: Submission = {
@@ -99,6 +99,7 @@ export default function SubmitPage() {
         contentType,
         content,
         fileType,
+        fileName,
         status: "pending",
         consultationUrl,
         editCode,

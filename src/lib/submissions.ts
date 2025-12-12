@@ -4,8 +4,9 @@ export interface Submission {
   title: string;
   studentName: string;
   contentType: "text" | "file";
-  content: string;
+  content: string; // Text or base64 encoded file
   fileType?: "pdf" | "docx";
+  fileName?: string;
   status: "pending" | "corrected";
   consultationUrl: string;
   editCode: string;
@@ -34,7 +35,7 @@ export function generateId(): string {
 }
 
 // Local storage helpers
-const STORAGE_KEY = "copyflow_submissions";
+const STORAGE_KEY = "submity_submissions";
 
 function getAllSubmissions(): Submission[] {
   const data = localStorage.getItem(STORAGE_KEY);

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { 
   Crown, 
   CheckCircle, 
@@ -12,7 +15,9 @@ import {
   FileDown,
   Clock,
   Users,
-  Zap
+  Zap,
+  GraduationCap,
+  BookOpen
 } from "lucide-react";
 
 const features = {
@@ -25,18 +30,69 @@ const features = {
     { name: "Export CSV", included: false },
     { name: "Dashboard professeur", included: false },
   ],
-  premium: [
+  student: [
     { name: "Dépôt de copies", included: true },
     { name: "Copies actives illimitées", included: true },
     { name: "Archivage permanent", included: true },
     { name: "Correction par code", included: true },
+    { name: "Support prioritaire", included: true },
+  ],
+  teacher: [
+    { name: "Tout le plan Élève", included: true },
     { name: "Dashboard professeur avancé", included: true },
     { name: "Export CSV des notes", included: true },
     { name: "Mode correction différée", included: true },
+    { name: "Filtres par statut/élève", included: true },
+    { name: "Support prioritaire", included: true },
   ],
 };
 
+// PayPal integration helper
+const initiatePayPalPayment = async (planType: 'student' | 'teacher') => {
+  // This would call your backend API which uses PAYPAL_CLIENT_ID and PAYPAL_SECRET
+  // from environment variables to create a PayPal order
+  const response = await fetch('/api/v1/payments/paypal/create-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      plan_type: planType,
+      amount: planType === 'student' ? '1.99' : '4.99',
+      currency: 'EUR'
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Erreur lors de la création du paiement');
+  }
+  
+  const data = await response.json();
+  return data;
+};
+
 export default function PremiumPage() {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState<'student' | 'teacher' | null>(null);
+
+  const handleSubscribe = async (planType: 'student' | 'teacher') => {
+    if (!user) {
+      toast.error("Veuillez vous connecter pour souscrire à un abonnement.");
+      return;
+    }
+
+    setIsLoading(planType);
+    try {
+      const order = await initiatePayPalPayment(planType);
+      // Redirect to PayPal approval URL
+      if (order.approval_url) {
+        window.location.href = order.approval_url;
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'initialisation du paiement. Veuillez réessayer.");
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   return (
     <Layout>
       {/* Hero */}
@@ -49,7 +105,7 @@ export default function PremiumPage() {
             </Badge>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-6">
               Débloquez tout le potentiel de{" "}
-              <span className="text-accent">CopyFlow</span>
+              <span className="text-accent">Submity</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               Archivage illimité, copies sans limite, et outils avancés pour les professeurs.
@@ -62,7 +118,7 @@ export default function PremiumPage() {
       {/* Pricing */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
             <Card variant="elevated">
               <CardHeader>
@@ -89,22 +145,68 @@ export default function PremiumPage() {
                   ))}
                 </ul>
                 <Button variant="outline" className="w-full" asChild>
-                  <Link to="/submit">Commencer gratuitement</Link>
+                  <Link to="/auth">Commencer gratuitement</Link>
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Premium Plan */}
+            {/* Student Premium Plan */}
+            <Card variant="elevated" className="border-primary/50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-bl-lg">
+                Élèves
+              </div>
+              <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                  Élève Premium
+                </CardTitle>
+                <CardDescription>Pour les élèves réguliers</CardDescription>
+                <div className="pt-4">
+                  <span className="text-4xl font-display font-bold">1,99€</span>
+                  <span className="text-muted-foreground">/mois</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mb-6">
+                  {features.student.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-status-corrected flex-shrink-0" />
+                      <span className="text-foreground">{feature.name}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => handleSubscribe('student')}
+                  disabled={isLoading === 'student'}
+                >
+                  {isLoading === 'student' ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      Chargement...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" />
+                      S'abonner avec PayPal
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Teacher Premium Plan */}
             <Card variant="elevated" className="border-accent/50 relative overflow-hidden">
               <div className="absolute top-0 right-0 gradient-premium text-premium-foreground text-xs font-medium px-3 py-1 rounded-bl-lg">
                 Populaire
               </div>
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-2">
-                  <Crown className="w-6 h-6 text-accent" />
-                  Premium
+                  <BookOpen className="w-6 h-6 text-accent" />
+                  Enseignant Premium
                 </CardTitle>
-                <CardDescription>Pour les utilisateurs réguliers</CardDescription>
+                <CardDescription>Pour les professeurs</CardDescription>
                 <div className="pt-4">
                   <span className="text-4xl font-display font-bold">4,99€</span>
                   <span className="text-muted-foreground">/mois</span>
@@ -112,16 +214,30 @@ export default function PremiumPage() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
-                  {features.premium.map((feature, index) => (
+                  {features.teacher.map((feature, index) => (
                     <li key={index} className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-status-corrected flex-shrink-0" />
                       <span className="text-foreground">{feature.name}</span>
                     </li>
                   ))}
                 </ul>
-                <Button variant="premium" className="w-full">
-                  <Zap className="w-4 h-4" />
-                  Passer à Premium
+                <Button 
+                  variant="premium" 
+                  className="w-full"
+                  onClick={() => handleSubscribe('teacher')}
+                  disabled={isLoading === 'teacher'}
+                >
+                  {isLoading === 'teacher' ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-premium-foreground/30 border-t-premium-foreground rounded-full animate-spin" />
+                      Chargement...
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="w-4 h-4" />
+                      S'abonner avec PayPal
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -137,7 +253,7 @@ export default function PremiumPage() {
               Fonctionnalités Premium
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Tout ce qui est inclus dans votre abonnement Premium.
+              Tout ce qui est inclus dans vos abonnements Premium.
             </p>
           </div>
 
@@ -238,14 +354,30 @@ export default function PremiumPage() {
               Prêt à passer à Premium ?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Rejoignez des milliers d'utilisateurs qui profitent déjà de toutes les fonctionnalités de CopyFlow.
+              Rejoignez des milliers d'utilisateurs qui profitent déjà de toutes les fonctionnalités de Submity.
             </p>
-            <Button variant="premium" size="xl">
-              <Crown className="w-5 h-5" />
-              Commencer l'essai gratuit
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                variant="default" 
+                size="xl"
+                onClick={() => handleSubscribe('student')}
+                disabled={isLoading === 'student'}
+              >
+                <GraduationCap className="w-5 h-5" />
+                Élève - 1,99€/mois
+              </Button>
+              <Button 
+                variant="premium" 
+                size="xl"
+                onClick={() => handleSubscribe('teacher')}
+                disabled={isLoading === 'teacher'}
+              >
+                <Crown className="w-5 h-5" />
+                Enseignant - 4,99€/mois
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground mt-4">
-              7 jours d'essai gratuit • Annulation à tout moment
+              Paiement sécurisé via PayPal • Annulation à tout moment
             </p>
           </Card>
         </div>
